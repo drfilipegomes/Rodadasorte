@@ -228,6 +228,8 @@ function win(){
   document.getElementById("ok").textContent="▶ Próxima frase";
 }
 
+function showCover(){clearInterval(timer);clearTimeout(wt);busy=false;mode="cover";render()}
+
 function startRound(i){
   idx=i;
   const p=phrases[i];
@@ -289,10 +291,19 @@ function render(){
     <div class="row"><button id="pp">⏸ Pausar</button><button class="g" id="ok">✔ Certo</button><button class="s" id="rev">👁 Revelar tudo</button><button class="s" id="sk">⏭ Saltar</button><button class="s" id="sn">${sl()}</button><button class="s" id="ed">✎ Editar</button></div>
     <p class="mut">Atalhos: Espaço = pausar/continuar · N = próxima frase · ${idx+1}/${phrases.length}</p>`;
     app.innerHTML=h;paint();wirePlay();return}
+  if(mode==="cover"){
+    manageBgMusic();
+    h+=`<div class="stage"><div id="bd">${boardHTML({text:"Descubra a palavra escondida"},true)}</div><div class="theme">Prontos?</div></div>
+    <div class="row"><button class="g" id="go2">▶ Começar</button><button class="s" id="ed">✎ Editar</button></div>
+    <p class="mut">Espaço ou Enter para começar</p>`;
+    app.innerHTML=h;
+    document.getElementById("go2").onclick=()=>startRound(0);
+    document.getElementById("ed").onclick=()=>{mode="edit";render()};
+    return}
   if(mode==="end"){
     manageBgMusic();
     app.innerHTML=h+`<div class="card"><p>🎉 Fim das frases!</p><div class="row l"><button id="again">Jogar outra vez</button><button class="s" id="ed">Editar frases</button></div></div>`;
-    document.getElementById("again").onclick=()=>startRound(0);document.getElementById("ed").onclick=()=>{mode="edit";render()};return}
+    document.getElementById("again").onclick=()=>showCover();document.getElementById("ed").onclick=()=>{mode="edit";render()};return}
   manageBgMusic();
   h+=`<div class="card"><label for="tt"><b>Título do jogo</b></label><div class="row l"><input id="tt" maxlength="60" placeholder="Título do jogo"></div></div>
     <div class="card"><b>Frases (${phrases.length})</b><div class="pl" id="pl"></div>
@@ -346,7 +357,7 @@ function render(){
   g("bload").onclick=()=>{const l=fromTxt(g("bk").value);
     if(!l.length){msg("Nenhuma linha válida. Usa o formato: Tema | Frase");return}
     phrases=l;editIdx=-1;save();render()};
-  g("go").onclick=()=>{editIdx=-1;startRound(0)}}
+  g("go").onclick=()=>{editIdx=-1;showCover()}}
 
 function wirePlay(){
   const g=id=>document.getElementById(id);
@@ -375,6 +386,7 @@ function wirePlay(){
 }
 
 document.addEventListener("keydown",e=>{
+  if(mode==="cover"&&(e.code==="Space"||e.key==="Enter")&&!["INPUT","SELECT","TEXTAREA","BUTTON"].includes(e.target.tagName)){e.preventDefault();startRound(0);return}
   if(mode!=="play"||["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName))return;
   if(e.code==="Space"){e.preventDefault();if(n<order.length)toggle()}
   else if(e.key==="n"||e.key==="N")next()});
