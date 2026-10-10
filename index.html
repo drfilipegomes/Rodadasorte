@@ -60,14 +60,15 @@ const isL=ch=>/\p{L}|\p{N}/u.test(ch);
 // Lista de Frases Dentárias
 const defaultPhrases = [
   {theme: "Instrução na Cadeira", text: "Abre a boca por favor"},
-  {theme: "Exame Médico", text: "Vamos fazer um raio x aos dentes"},
-  {theme: "Frase do Paciente", text: "Doutor, posso cuspir?"},
+  {theme: "Pergunta do Paciente", text: "Doutor, posso cuspir?"},
+  {theme: "Exame Médico", text: "Vamos fazer uma radiografia aos dentes"},
+  {theme: "Um acidente", text: "O chumbo caiu enquanto comia pão"},
   {theme: "Dúvida de Pós-Consulta", text: "Posso comer normalmente depois da consulta?"},
-  {theme: "Motivo de Urgência", text: "O chumbo caiu enquanto comia pão"},
-  {theme: "Hábitos Diários", text: "Eu escovo os dentes duas vezes por dia"},
+  {theme: "Hábitos Diários", text: "Escovar os dentes três vezes por dia"},
+  {theme: "Conselho de Saúde Oral", text: "Substituir a escova de dentes de três em três meses"},
   {theme: "Pergunta do Dentista", text: "Quando fez a sua última limpeza dentária?"},
   {theme: "Plano de Tratamento", text: "O implante dentário é a melhor opção"},
-  {theme: "Conselho de Saúde", text: "Substituir a escova de dentes de três em três meses"}
+  {theme: "Final", text: "Obrigado pela atenção! O TEAM é TOP!"}
 ];
 
 let title="A Roda da Sorte — Clínica Dentária",editIdx=-1,phrases=[],mode="edit",idx=0,order=[],n=0,paused=false,timer=null,speed=1000,saveOK=true;
