@@ -71,7 +71,7 @@ const defaultPhrases = [
   {theme: "Final", text: "Obrigado pela atenção! O TEAM é TOP!"}
 ];
 
-let title="A Roda da Sorte — Clínica Dentária",editIdx=-1,phrases=[],mode="edit",idx=0,order=[],n=0,paused=false,timer=null,speed=1000,saveOK=true;
+let shared=false,title="A Roda da Sorte — Clínica Dentária",editIdx=-1,phrases=[],mode="edit",idx=0,order=[],n=0,paused=false,timer=null,speed=1000,saveOK=true;
 try{
   const stored = localStorage.getItem("rde_phrases");
   phrases = stored ? JSON.parse(stored) : defaultPhrases;
@@ -83,7 +83,13 @@ try{
   saveOK = false;
 }
 
-const save=()=>{try{localStorage.setItem("rde_phrases",JSON.stringify(phrases));localStorage.setItem("rde_speed",speed);localStorage.setItem("rde_title",title)}catch(e){saveOK=false}};
+function encodeShare(){const j=JSON.stringify({t:title,s:speed,p:phrases.map(q=>[q.theme,q.text])});return "g1."+btoa(unescape(encodeURIComponent(j))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function decodeShare(d){try{d=d.replace(/-/g,"+").replace(/_/g,"/");while(d.length%4)d+="=";const o=JSON.parse(decodeURIComponent(escape(atob(d))));
+  const p=(o.p||[]).slice(0,200).filter(a=>Array.isArray(a)&&a[0]&&a[1]).map(a=>({theme:String(a[0]).slice(0,80),text:String(a[1]).slice(0,200)}));
+  return p.length?{t:String(o.t||"").slice(0,60),s:+o.s||0,p}:null}catch(e){return null}}
+try{if(location.hash.startsWith("#g1.")){const o=decodeShare(location.hash.slice(4));if(o){phrases=o.p;if(o.t)title=o.t;if([1000,2000,3000].includes(o.s))speed=o.s;shared=true}}}catch(e){}
+window.addEventListener("hashchange",()=>location.reload());
+const save=()=>{if(shared)return;try{localStorage.setItem("rde_phrases",JSON.stringify(phrases));localStorage.setItem("rde_speed",speed);localStorage.setItem("rde_title",title)}catch(e){saveOK=false}};
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const letters=t=>[...t].map((c,i)=>isL(c)?i:-1).filter(i=>i>=0);
 
@@ -306,14 +312,15 @@ function render(){
     app.innerHTML=h+`<div class="card"><p>🎉 Fim das frases!</p><div class="row l"><button id="again">Jogar outra vez</button><button class="s" id="ed">Editar frases</button></div></div>`;
     document.getElementById("again").onclick=()=>showCover();document.getElementById("ed").onclick=()=>{mode="edit";render()};return}
   manageBgMusic();
-  h+=`<div class="card"><label for="tt"><b>Título do jogo</b></label><div class="row l"><input id="tt" maxlength="60" placeholder="Título do jogo"></div></div>
+  h+=`${shared?'<div class="card"><b>🔗 Jogo partilhado</b><p class="mut" style="text-align:left">Estás a ver o jogo de outra pessoa. As alterações que fizeres aqui <b>não são guardadas</b> e a tua lista original não foi tocada.</p><div class="row l"><button id="sv">Guardar como a minha lista</button><button class="s" id="sx">Sair e voltar à minha lista</button></div></div>':""}<div class="card"><label for="tt"><b>Título do jogo</b></label><div class="row l"><input id="tt" maxlength="60" placeholder="Título do jogo"></div></div>
     <div class="card"><b>Frases (${phrases.length})</b><div class="pl" id="pl"></div>
     <div class="row l"><input id="th" placeholder="Tema (ex.: Instrução na Cadeira)"><input id="tx" placeholder="Frase"></div>
     <div class="row l"><button id="add">${editIdx>=0?"Guardar alteração":"Adicionar"}</button>${editIdx>=0?'<button class="s" id="cx">Cancelar</button>':""}<button class="s" id="ex">Adicionar frases dentárias</button></div></div>
     <div class="card"><b>Guardar e carregar a lista</b>
     <p class="mut" style="text-align:left">Uma frase por linha, no formato <code>Tema | Frase</code>. Podes editar aqui o texto à vontade.</p>
     <textarea id="bk" rows="6" spellcheck="false"></textarea>
-    <div class="row l"><button id="bsave">Guardar ficheiro</button><button class="s" id="bcopy">Copiar texto</button><button class="s" id="bfile">Abrir ficheiro…</button><button class="s" id="bload">Carregar do texto (substitui a lista)</button><input type="file" id="bf" accept=".txt,text/plain" hidden></div>
+    <div class="row l"><button id="bsave">Guardar ficheiro</button><button class="s" id="bcopy">Copiar texto</button><button class="s" id="blink">Copiar link do jogo</button><button class="s" id="bfile">Abrir ficheiro…</button><button class="s" id="bload">Carregar do texto (substitui a lista)</button><input type="file" id="bf" accept=".txt,text/plain" hidden></div>
+    <input id="lk" readonly hidden aria-label="Link do jogo">
     <p class="mut" id="bmsg" style="text-align:left"></p></div>
     <div class="card"><div class="row l"><label for="sp">Velocidade</label><select id="sp">${[[1000,"1 s por letra"],[2000,"2 s por letra"],[3000,"3 s por letra"]].map(([v,l])=>`<option value="${v}"${speed==v?" selected":""}>${l}</option>`).join("")}</select>
     <button class="g" id="go" ${phrases.length?"":"disabled"}>Começar Jogo</button></div>${saveOK?"":'<p class="mut">Nota: neste navegador as frases não ficam guardadas.</p>'}</div>`;
@@ -352,6 +359,11 @@ function render(){
   g("bcopy").onclick=async()=>{const t=g("bk");t.select();
     try{await navigator.clipboard.writeText(t.value);msg("Texto copiado.")}
     catch(e){try{document.execCommand("copy");msg("Texto copiado.")}catch(e2){msg("Seleciona o texto e copia com Ctrl+C.")}}};
+  g("blink").onclick=async()=>{const url=location.href.split("#")[0]+"#"+encodeShare();const L=g("lk");L.value=url;L.hidden=false;L.select();
+    let ok=false;try{await navigator.clipboard.writeText(url);ok=true}catch(e){try{ok=document.execCommand("copy")}catch(e2){}}
+    msg((ok?"Link copiado. ":"Copia o link da caixa acima. ")+(url.length>6000?"Atenção: o link é muito comprido e pode não funcionar em todas as aplicações.":"Quem o abrir vê este jogo sem alterar a sua própria lista."))};
+  if(g("sv"))g("sv").onclick=()=>{shared=false;history.replaceState(null,"",location.pathname+location.search);save();render()};
+  if(g("sx"))g("sx").onclick=()=>{history.replaceState(null,"",location.pathname+location.search);location.reload()};
   g("bfile").onclick=()=>g("bf").click();
   g("bf").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
     r.onload=()=>{g("bk").value=String(r.result);msg("Ficheiro lido. Carrega em «Carregar do texto» para o usar.")};r.readAsText(f)};
